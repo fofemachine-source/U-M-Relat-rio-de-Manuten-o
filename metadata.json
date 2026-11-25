@@ -1,0 +1,8 @@
+{
+  "name": "U&M – Relatório de Manutenção",
+  "description": "Aplicativo móvel para montar o relatório diário de manutenção dos equipamentos rodoviários da U&M e enviá-lo formatado no WhatsApp.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
