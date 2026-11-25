@@ -121,7 +121,9 @@ export const EquipmentSheet: React.FC<EquipmentSheetProps> = ({
                           onSelect(code);
                           onClose();
                         }}
-                        className={`min-h-[44px] px-2 rounded-[10px] text-[14px] font-semibold tabular-nums border transition-all active:scale-[0.97] ${
+                        className={`min-h-[44px] px-1.5 rounded-[10px] font-semibold tabular-nums whitespace-nowrap border transition-all active:scale-[0.97] ${
+                          code.length > 8 ? 'text-[12px] tracking-tight' : 'text-[14px]'
+                        } ${
                           isSelected
                             ? 'bg-[#0f3b2c] border-[#0f3b2c] text-white shadow-xs'
                             : isDisabled

@@ -237,7 +237,9 @@ export const BatchAddSheet: React.FC<BatchAddSheetProps> = ({
                           type="button"
                           disabled={alreadyInReport}
                           onClick={() => toggleCode(code)}
-                          className={`min-h-[44px] px-2 rounded-[10px] text-[14px] font-semibold tabular-nums border transition-all flex items-center justify-center gap-1 ${
+                          className={`min-h-[44px] px-1.5 rounded-[10px] font-semibold tabular-nums whitespace-nowrap border transition-all flex items-center justify-center gap-1 ${
+                            code.length > 8 ? 'text-[12px] tracking-tight' : 'text-[14px]'
+                          } ${
                             alreadyInReport
                               ? 'bg-[#f2f4f3] dark:bg-[#1a2420] border-[#e4e9e6] dark:border-[#26342e] text-[#9aa7a2] dark:text-[#55665f] opacity-45 cursor-not-allowed'
                               : isSelected
