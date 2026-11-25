@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Check, Plus, Search } from 'lucide-react';
+import { ArrowLeft, Check, PenLine, Plus, Search } from 'lucide-react';
 import { BottomSheet } from './BottomSheet';
 import { DateField } from './DateField';
 import {
@@ -45,6 +45,8 @@ export const BatchAddSheet: React.FC<BatchAddSheetProps> = ({
   const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
   const [svQuery, setSvQuery] = useState('');
   const [sharedServices, setSharedServices] = useState<string[]>([]);
+  const [showOtherCause, setShowOtherCause] = useState(false);
+  const [otherCauseDraft, setOtherCauseDraft] = useState('');
   const [sharedDue, setSharedDue] = useState('');
 
   useEffect(() => {
@@ -54,6 +56,8 @@ export const BatchAddSheet: React.FC<BatchAddSheetProps> = ({
       setSelectedCodes([]);
       setSvQuery('');
       setSharedServices([]);
+      setShowOtherCause(false);
+      setOtherCauseDraft('');
       setSharedDue('');
     }
   }, [isOpen]);
@@ -135,6 +139,34 @@ export const BatchAddSheet: React.FC<BatchAddSheetProps> = ({
     setSvQuery('');
   };
 
+  const handleAddOtherCause = () => {
+    const trimmed = otherCauseDraft.trim().replace(/\.+$/, '').trim();
+    if (!trimmed) return;
+    if (!catSv.some((s) => normalizeSearch(s) === normalizeSearch(trimmed))) {
+      onRegisterService(trimmed);
+    }
+    if (!sharedServiceNormSet.has(normalizeSearch(trimmed))) {
+      setSharedServices((prev) => [...prev, trimmed]);
+    }
+    setOtherCauseDraft('');
+  };
+
+  const handleConfirmBatch = () => {
+    const finalServices = [...sharedServices];
+    const pendingOther = otherCauseDraft.trim().replace(/\.+$/, '').trim();
+    if (pendingOther) {
+      const norm = normalizeSearch(pendingOther);
+      if (!catSv.some((s) => normalizeSearch(s) === norm)) {
+        onRegisterService(pendingOther);
+      }
+      if (!finalServices.some((s) => normalizeSearch(s) === norm)) {
+        finalServices.push(pendingOther);
+      }
+    }
+    onConfirmAdd(selectedCodes, finalServices, sharedDue);
+    onClose();
+  };
+
   const handleServiceKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -170,10 +202,7 @@ export const BatchAddSheet: React.FC<BatchAddSheetProps> = ({
     ) : (
       <button
         type="button"
-        onClick={() => {
-          onConfirmAdd(selectedCodes, sharedServices, sharedDue);
-          onClose();
-        }}
+        onClick={handleConfirmBatch}
         className="w-full min-h-[48px] rounded-[12px] bg-[#0f3b2c] hover:bg-[#144c39] text-white font-semibold text-[16px] active:scale-[0.99] transition-transform"
       >
         Adicionar {count} ao relatório
@@ -330,7 +359,7 @@ export const BatchAddSheet: React.FC<BatchAddSheetProps> = ({
               value={svQuery}
               onChange={(e) => setSvQuery(e.target.value)}
               onKeyDown={handleServiceKeyDown}
-              placeholder="Buscar ou digitar um serviço"
+              placeholder="Buscar ou digitar causa / serviço"
               className="w-full min-h-[46px] px-3.5 rounded-[12px] bg-[#f4f6f5] dark:bg-[#202d28] border border-[#dfe5e2] dark:border-[#2f3f38] text-[16px] text-[#14201b] dark:text-[#eef3f1] placeholder:text-[#82918b] dark:placeholder:text-[#7c9088] focus:outline-none focus:ring-2 focus:ring-[#0f3b2c]/30 dark:focus:ring-[#4ea885]/40 focus:border-[#0f3b2c]"
             />
 
@@ -346,6 +375,71 @@ export const BatchAddSheet: React.FC<BatchAddSheetProps> = ({
             )}
 
             <div className="space-y-2">
+              {/* "Outro" option to type custom cause */}
+              <div
+                className={`rounded-[12px] border transition-colors ${
+                  showOtherCause
+                    ? 'bg-[#e6f5ee] dark:bg-[#123326] border-[#0f3b2c]/45 dark:border-[#3c9973]'
+                    : 'bg-white dark:bg-[#1b2621] border-[#e1e7e4] dark:border-[#2c3b34]'
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => setShowOtherCause((prev) => !prev)}
+                  className="w-full min-h-[50px] px-3.5 py-2.5 flex items-center justify-between gap-3 text-left active:scale-[0.99] transition-transform"
+                >
+                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <PenLine className="w-4 h-4 shrink-0 text-[#0f3b2c] dark:text-[#6fd1a9]" />
+                    <div className="min-w-0">
+                      <span className="block text-[14px] leading-snug font-semibold text-[#0f3b2c] dark:text-[#86e2bc]">
+                        Outro (digitar causa)
+                      </span>
+                      <span className="block text-[12px] text-[#66756f] dark:text-[#92a59e]">
+                        Escreva uma causa que não está na lista
+                      </span>
+                    </div>
+                  </div>
+                  <span
+                    aria-hidden="true"
+                    className={`w-[22px] h-[22px] rounded-[6px] flex items-center justify-center shrink-0 border-2 transition-colors ${
+                      showOtherCause
+                        ? 'bg-[#0f3b2c] border-[#0f3b2c] text-white'
+                        : 'bg-white dark:bg-[#202d28] border-[#788781] dark:border-[#60736b]'
+                    }`}
+                  >
+                    {showOtherCause && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                  </span>
+                </button>
+
+                {showOtherCause && (
+                  <div className="px-3.5 pb-3.5 pt-1 space-y-2.5">
+                    <input
+                      type="text"
+                      value={otherCauseDraft}
+                      autoFocus
+                      onChange={(e) => setOtherCauseDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddOtherCause();
+                        }
+                      }}
+                      placeholder="Digite a causa / serviço..."
+                      className="w-full min-h-[44px] px-3 rounded-[10px] bg-white dark:bg-[#16201c] border border-[#0f3b2c]/45 dark:border-[#4ea885] text-[15px] text-[#14201b] dark:text-[#eef3f1] placeholder:text-[#82918b] dark:placeholder:text-[#7c9088] focus:outline-none focus:ring-2 focus:ring-[#0f3b2c]/30"
+                    />
+                    <button
+                      type="button"
+                      disabled={!otherCauseDraft.trim()}
+                      onClick={handleAddOtherCause}
+                      className="w-full min-h-[42px] px-3.5 rounded-[10px] bg-[#0f3b2c] hover:bg-[#144c39] disabled:bg-[#9bb0a7] dark:disabled:bg-[#2a3b34] disabled:cursor-not-allowed text-white text-[14px] font-semibold flex items-center justify-center gap-1.5 active:scale-[0.99] transition-all"
+                    >
+                      <Plus className="w-4 h-4 shrink-0" />
+                      <span>Incluir causa</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {filteredServices.map((service) => {
                 const checked = sharedServiceNormSet.has(normalizeSearch(service));
                 return (

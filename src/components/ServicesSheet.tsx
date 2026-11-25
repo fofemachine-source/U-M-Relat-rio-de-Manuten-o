@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Check, Plus } from 'lucide-react';
+import { Check, PenLine, Plus } from 'lucide-react';
 import { BottomSheet } from './BottomSheet';
 import { isValeItem, normalizeSearch } from '../utils/reportUtils';
 
@@ -23,10 +23,14 @@ export const ServicesSheet: React.FC<ServicesSheetProps> = ({
   onRegisterService,
 }) => {
   const [query, setQuery] = useState('');
+  const [showOtherCause, setShowOtherCause] = useState(false);
+  const [otherCauseDraft, setOtherCauseDraft] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       setQuery('');
+      setShowOtherCause(false);
+      setOtherCauseDraft('');
     }
   }, [isOpen]);
 
@@ -84,6 +88,32 @@ export const ServicesSheet: React.FC<ServicesSheetProps> = ({
     setQuery('');
   };
 
+  const handleAddOtherCause = () => {
+    const trimmed = otherCauseDraft.trim().replace(/\.+$/, '').trim();
+    if (!trimmed) return;
+    if (!catSv.some((s) => normalizeSearch(s) === normalizeSearch(trimmed))) {
+      onRegisterService(trimmed);
+    }
+    if (!selectedNormSet.has(normalizeSearch(trimmed))) {
+      onChangeItems([...currentItems, trimmed]);
+    }
+    setOtherCauseDraft('');
+  };
+
+  const handleDone = () => {
+    const pendingOther = otherCauseDraft.trim().replace(/\.+$/, '').trim();
+    if (pendingOther) {
+      const norm = normalizeSearch(pendingOther);
+      if (!catSv.some((s) => normalizeSearch(s) === norm)) {
+        onRegisterService(pendingOther);
+      }
+      if (!selectedNormSet.has(norm)) {
+        onChangeItems([...currentItems, pendingOther]);
+      }
+    }
+    onClose();
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -106,7 +136,7 @@ export const ServicesSheet: React.FC<ServicesSheetProps> = ({
       footer={
         <button
           type="button"
-          onClick={onClose}
+          onClick={handleDone}
           className="w-full min-h-[48px] rounded-[12px] bg-[#0f3b2c] hover:bg-[#144c39] text-white font-semibold text-[16px] active:scale-[0.99] transition-transform"
         >
           Concluir
@@ -120,7 +150,7 @@ export const ServicesSheet: React.FC<ServicesSheetProps> = ({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Buscar ou digitar um serviço"
+          placeholder="Buscar ou digitar causa / serviço"
           className="w-full min-h-[46px] px-3.5 rounded-[12px] bg-[#f4f6f5] dark:bg-[#202d28] border border-[#dfe5e2] dark:border-[#2f3f38] text-[16px] text-[#14201b] dark:text-[#eef3f1] placeholder:text-[#82918b] dark:placeholder:text-[#7c9088] focus:outline-none focus:ring-2 focus:ring-[#0f3b2c]/30 dark:focus:ring-[#4ea885]/40 focus:border-[#0f3b2c]"
         />
 
@@ -138,6 +168,71 @@ export const ServicesSheet: React.FC<ServicesSheetProps> = ({
 
         {/* Services checkbox list matching Screenshot 4 */}
         <div className="space-y-2">
+          {/* "Outro" option to type custom cause */}
+          <div
+            className={`rounded-[12px] border transition-colors ${
+              showOtherCause
+                ? 'bg-[#e6f5ee] dark:bg-[#123326] border-[#0f3b2c]/45 dark:border-[#3c9973]'
+                : 'bg-white dark:bg-[#1b2621] border-[#e1e7e4] dark:border-[#2c3b34]'
+            }`}
+          >
+            <button
+              type="button"
+              onClick={() => setShowOtherCause((prev) => !prev)}
+              className="w-full min-h-[52px] px-4 py-3 flex items-center justify-between gap-3 text-left active:scale-[0.99] transition-transform"
+            >
+              <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                <PenLine className="w-4 h-4 shrink-0 text-[#0f3b2c] dark:text-[#6fd1a9]" />
+                <div className="min-w-0">
+                  <span className="block text-[15px] leading-snug font-semibold text-[#0f3b2c] dark:text-[#86e2bc]">
+                    Outro (digitar causa)
+                  </span>
+                  <span className="block text-[12px] text-[#66756f] dark:text-[#92a59e]">
+                    Escreva uma causa que não está na lista
+                  </span>
+                </div>
+              </div>
+              <span
+                aria-hidden="true"
+                className={`w-[22px] h-[22px] rounded-[6px] flex items-center justify-center shrink-0 border-2 transition-colors ${
+                  showOtherCause
+                    ? 'bg-[#0f3b2c] border-[#0f3b2c] text-white'
+                    : 'bg-white dark:bg-[#202d28] border-[#788781] dark:border-[#60736b]'
+                }`}
+              >
+                {showOtherCause && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+              </span>
+            </button>
+
+            {showOtherCause && (
+              <div className="px-4 pb-3.5 pt-1 space-y-2.5">
+                <input
+                  type="text"
+                  value={otherCauseDraft}
+                  autoFocus
+                  onChange={(e) => setOtherCauseDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddOtherCause();
+                    }
+                  }}
+                  placeholder="Digite a causa / serviço..."
+                  className="w-full min-h-[44px] px-3 rounded-[10px] bg-white dark:bg-[#16201c] border border-[#0f3b2c]/45 dark:border-[#4ea885] text-[15px] text-[#14201b] dark:text-[#eef3f1] placeholder:text-[#82918b] dark:placeholder:text-[#7c9088] focus:outline-none focus:ring-2 focus:ring-[#0f3b2c]/30"
+                />
+                <button
+                  type="button"
+                  disabled={!otherCauseDraft.trim()}
+                  onClick={handleAddOtherCause}
+                  className="w-full min-h-[42px] px-3.5 rounded-[10px] bg-[#0f3b2c] hover:bg-[#144c39] disabled:bg-[#9bb0a7] dark:disabled:bg-[#2a3b34] disabled:cursor-not-allowed text-white text-[14px] font-semibold flex items-center justify-center gap-1.5 active:scale-[0.99] transition-all"
+                >
+                  <Plus className="w-4 h-4 shrink-0" />
+                  <span>Incluir causa</span>
+                </button>
+              </div>
+            )}
+          </div>
+
           {filteredServices.map((service) => {
             const checked = selectedNormSet.has(normalizeSearch(service));
             return (
